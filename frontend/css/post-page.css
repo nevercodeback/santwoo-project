@@ -1,0 +1,98 @@
+/* File: santwoo_project/frontend/css/post-page.css */
+
+/* Back button hover effect (if not kept inline in HTML) */
+#notesBackButton:hover svg {
+    color: #333333; /* Darker on hover for feedback */
+}
+
+/* Main post container adjustments (Tailwind handles most spacing) */
+#postContainer {
+    /* pt-24 applied in HTML */
+}
+
+#postTitle {
+    color: #1c1c1e; /* Near black */
+    font-weight: 700; /* Bold title */
+    letter-spacing: -0.01em; /* Subtle letter spacing */
+}
+
+#postMeta {
+    color: #6b7280; /* Tailwind gray-500 */
+}
+
+#postMeta #postCategoryTag {
+    padding: 0.1rem 0.5rem; /* Adjusted padding slightly */
+    border-radius: 0.375rem; /* md rounded */
+    font-size: 0.7rem; /* Even smaller text */
+    font-weight: 500;
+    line-height: 1.2; /* Ensure consistent line height */
+    /* JavaScript will apply specific Tailwind classes for background and text colors.
+       Ensure no default background or color here that would override JS. */
+}
+
+#postStory p {
+    margin-bottom: 1.15em; /* Fine-tune paragraph spacing */
+    line-height: 1.75; /* Increased line height for readability */
+    font-size: 1.05rem; /* Approx 17px, good for readability */
+    color: #374151; /* Tailwind gray-700 for body text */
+}
+
+#postStory strong {
+    font-weight: 600; /* Bolder than default prose if needed */
+    color: #111827; /* Tailwind gray-900 */
+}
+
+#postStory a {
+    color: #007aff; /* Standard iOS blue for links */
+    text-decoration: none;
+    font-weight: 500;
+}
+#postStory a:hover {
+    text-decoration: underline;
+}
+
+/* Styles for the action buttons area */
+.notes-action-button {
+    padding: 0.375rem 0.25rem; /* Fine-tuned padding */
+    border-radius: 0.5rem; /* Tailwind rounded-lg */
+    background-color: transparent; /* No default background */
+    border: none; /* No default border */
+    color: #374151; /* Default text color (gray-700) */
+    transition: background-color 0.15s ease-in-out; /* Subtle hover transition */
+}
+.notes-action-button:hover {
+    background-color: rgba(0,0,0,0.03); /* Very subtle hover */
+}
+
+.notes-action-button-text {
+    /* font-weight: 500; */ /* Uncomment if you want medium weight for button text */
+}
+
+/* Specific style for the support button when active (supported) */
+#supportButtonSinglePost.supported-by-user-single,
+#supportButtonSinglePost.supported-by-user-single:hover {
+    color: #ec4899; /* Tailwind pink-500 for text */
+    background-color: transparent; /* No background change when active for minimal style */
+}
+#supportButtonSinglePost.supported-by-user-single:hover {
+    background-color: rgba(236, 72, 153, 0.05); /* Very subtle pinkish hover when active */
+}
+
+#supportButtonSinglePost.supported-by-user-single svg {
+    fill: #ec4899; /* Tailwind pink-500 for icon fill */
+    color: #ec4899; /* Tailwind pink-500 for icon stroke */
+}
+
+/* Loading pulse animation (Tailwind's animate-pulse is used in HTML, this is a fallback) */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+/* If you find Tailwind's animate-pulse not working as expected, you can uncomment this: */
+/* .animate-pulse div {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+} */
+
+/* Hide scrollbar */
+body::-webkit-scrollbar { display: none; }
+body { -ms-overflow-style: none; scrollbar-width: none; }

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SantWoo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="text-gray-800 antialiased">
+
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center justify-center py-3">
+                <div class="text-center">
+                    <a href="index.html" id="siteTitleDynamic" class="text-3xl font-black gradient-text-main-default">SantWoo</a>
+                    <p class="text-xs text-gray-500 tracking-tight mt-0.5">Posts from Humans.</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white border-b border-t border-gray-200">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <nav id="categoryBar" class="category-bar">
+                    </nav>
+            </div>
+        </div>
+    </header>
+
+    <button id="openCreatePostDialogFab" class="fab gradient-accent-main-default text-white p-4 rounded-full shadow-xl hover:opacity-90 active:shadow-2xl transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EC4899]">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        <span class="sr-only">Create Post</span>
+    </button>
+
+    <dialog id="createPostDialog" class="p-0 rounded-xl shadow-xl w-full max-w-lg bg-white overflow-hidden">
+        <div class="relative p-6 sm:p-8">
+            <button id="closeCreatePostDialog" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span class="sr-only">Close dialog</span>
+            </button>
+            <h3 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-6 text-center">Share Your Story</h3>
+            <form id="createPostForm">
+                <div class="mb-4">
+                    <label for="userName" class="block text-sm font-medium text-gray-700 mb-1.5">Your Name (Optional)</label>
+                    <input type="text" id="userName" name="userName" placeholder="e.g., Creative Soul" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-[#EC4899] focus:border-[#EC4899] transition-colors text-sm sm:text-base">
+                </div>
+
+                <div class="mb-4">
+                    <label for="postTitle" class="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
+                    <input type="text" id="postTitle" name="postTitle" placeholder="A Catchy Title" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-[#EC4899] focus:border-[#EC4899] transition-colors text-sm sm:text-base" required>
+                </div>
+                <div class="mb-4">
+                    <label for="postCategory" class="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+                    <select id="postCategory" name="postCategory" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-[#EC4899] focus:border-[#EC4899] transition-colors text-sm sm:text-base bg-white">
+                        </select>
+                </div>
+                <div class="mb-6">
+                    <label for="userStory" class="block text-sm font-medium text-gray-700 mb-1.5">Your Story</label>
+                    <textarea id="userStory" name="userStory" rows="5" placeholder="What's on your mind?" class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-[#EC4899] focus:border-[#EC4899] transition-colors text-sm sm:text-base" required></textarea>
+                </div>
+                <button type="submit" id="submitPostButton" class="w-full gradient-accent-main-default text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:opacity-90 active:shadow-lg transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#EC4899]">
+                    Share Your Story
+                </button>
+            </form>
+        </div>
+    </dialog>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div id="postFeed" class="space-y-5 sm:space-y-6">
+        
+        </div>
+    </main>
+
+    <footer class="bg-white fixed bottom-0 left-0 right-0 z-30 py-3">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-xs text-gray-400">&copy; <span id="currentYear"></span> SantWoo.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

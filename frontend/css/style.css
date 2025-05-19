@@ -1,0 +1,59 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #F9FAFB;
+    padding-bottom: 70px;
+}
+/* --- Default Main Accent Gradient (Pink/Red) --- */
+.gradient-accent-main-default {
+    background-image: linear-gradient(to right, #EC4899, #EF4444);
+}
+.gradient-text-main-default {
+    background-image: linear-gradient(to right, #EC4899, #EF4444);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* --- Category Specific Background Gradients (for buttons/FAB) --- */
+.gradient-bg-cat-all { background-image: linear-gradient(to right, #EC4899, #EF4444); }
+.gradient-bg-cat-tech { background-image: linear-gradient(to right, #3B82F6, #8B5CF6); }
+.gradient-bg-cat-life { background-image: linear-gradient(to right, #10B981, #14B8A6); }
+.gradient-bg-cat-spiritual { background-image: linear-gradient(to right, #A855F7, #D946EF); }
+.gradient-bg-cat-love { background-image: linear-gradient(to right, #F97316, #EC4899); }
+
+/* --- Category Specific Text Gradients (for site title) --- */
+.gradient-text-cat-all { background-image: linear-gradient(to right, #EC4899, #EF4444); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gradient-text-cat-tech { background-image: linear-gradient(to right, #3B82F6, #8B5CF6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gradient-text-cat-life { background-image: linear-gradient(to right, #10B981, #14B8A6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gradient-text-cat-spiritual { background-image: linear-gradient(to right, #A855F7, #D946EF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gradient-text-cat-love { background-image: linear-gradient(to right, #F97316, #EC4899); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+
+dialog[open] { display: flex; align-items: center; justify-content: center; }
+dialog::backdrop { background-color: rgba(0, 0, 0, 0.6); }
+.fab { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 45; }
+
+.category-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; padding: 10px 0; }
+.category-bar::-webkit-scrollbar { display: none; }
+.category-item {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 72px; height: 72px; margin-right: 10px; border-radius: 10px;
+    background-color: #FFFFFF; border: 1px solid #E5E7EB; cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-image 0.3s ease;
+    text-align: center;
+}
+.category-item:last-child { margin-right: 0; }
+.category-item:hover:not(.active) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #D1D5DB; }
+.category-item.active {
+    color: white; border: 1px solid transparent;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1); transform: translateY(-1px);
+}
+.category-icon { width: 26px; height: 26px; margin-bottom: 5px; color: #4B5563; transition: color 0.3s ease; }
+.category-item.active .category-icon { color: white; }
+.category-name { font-size: 0.65rem; color: #6B7280; font-weight: 500; line-height: 1.2; transition: color 0.3s ease; }
+.category-item.active .category-name { color: white; font-weight: 600; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }

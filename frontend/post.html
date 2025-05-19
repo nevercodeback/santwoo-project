@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Post Details - SantWoo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css"> 
+    <link rel="stylesheet" href="css/post-page.css">
+    <style>
+        /* Critical Base Styles for body and safe areas */
+        body {
+            background-color: #f0f0f5; /* Light gray background like iOS Notes */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1c1c1e; /* Default text color, near black */
+            margin: 0; 
+        }
+        .status-bar-safe-area {
+            padding-top: env(safe-area-inset-top);
+        }
+        .bottom-nav-safe-area {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Back Button Styles - kept inline for critical positioning */
+        #notesBackButton {
+            position: absolute;
+            top: calc(env(safe-area-inset-top) + 12px);
+            left: 12px;
+            z-index: 10;
+            color: #000000;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        #notesBackButton svg {
+             width: 1.5rem; /* 24px */
+             height: 1.5rem;
+             stroke-width: 2.5; /* Make arrow lines a bit thicker */
+        }
+        /* Hover effect for back button can be in post-page.css or here */
+        /* #notesBackButton:hover svg { color: #333333; } */ 
+    </style>
+</head>
+<body class="text-gray-800 antialiased status-bar-safe-area">
+
+    <button id="notesBackButton" onclick="history.back()" aria-label="Back">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+    </button>
+
+    <main id="postContainer" class="container mx-auto max-w-2xl px-5 sm:px-6 py-8 pt-24">
+        
+        <div id="postLoadingError" class="text-center py-10">
+            <div role="status" class="animate-pulse">
+                <div class="h-8 bg-gray-300 rounded-md w-3/4 mb-4 mx-auto"></div>
+                <div class="h-4 bg-gray-300 rounded-md w-1/2 mb-6 mx-auto"></div>
+                <div class="h-4 bg-gray-300 rounded-md w-full mb-2.5 mx-auto"></div>
+                <div class="h-4 bg-gray-300 rounded-md w-full mb-2.5 mx-auto"></div>
+                <div class="h-4 bg-gray-300 rounded-md w-3/4 mb-2.5 mx-auto"></div>
+                <div class="h-4 bg-gray-300 rounded-md w-1/2 mb-6 mx-auto"></div>
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+
+        <article id="postContentArea" class="hidden">
+            <h1 id="postTitle" class="text-3xl sm:text-4xl font-bold text-gray-900 mb-5 leading-tight"></h1>
+            
+            <div id="postMeta" class="text-sm text-gray-500 mb-8 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                <span id="postAuthor"></span>
+                <span class="text-gray-400 px-1.5">&bull;</span>
+                <span id="postDate"></span>
+                <span id="postCategoryTagWrapper" class="flex items-center">
+                    <span class="text-gray-400 px-1.5">&bull;</span>
+                    <span id="postCategoryTag" class="font-medium text-xs"></span>
+                </span>
+            </div>
+
+            <div id="postStory" class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                {/* Story content will be injected here by JS */}
+            </div>
+
+            <div id="postActions" class="mt-10 pt-6 border-t border-gray-300 flex items-center justify-start gap-x-8">
+                 <button id="supportButtonSinglePost" class="notes-action-button group flex items-center text-sm" data-post-id-support="">
+                    <svg class="w-5 h-5 mr-1.5 text-gray-500 group-hover:text-pink-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    <span class="notes-action-button-text">Support</span>
+                    <span id="supportCountSinglePost" class="ml-1.5 text-xs text-gray-400">(0)</span>
+                </button>
+                <button id="shareButtonSinglePost" class="notes-action-button group flex items-center text-sm">
+                    <svg class="w-5 h-5 mr-1.5 text-gray-500 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 4.186 2.25 2.25 0 000-4.186zm0 0L12.502 7.217M12.502 16.783L7.217 13.093m4.985-5.876a2.25 2.25 0 100-4.186 2.25 2.25 0 000 4.186zM16.907 7.217a2.25 2.25 0 100-4.186 2.25 2.25 0 000 4.186zM16.907 16.783a2.25 2.25 0 100 4.186 2.25 2.25 0 000 4.186z"></path></svg>
+                    <span class="notes-action-button-text">Share</span>
+                </button>
+            </div>
+        </article>
+    </main>
+
+    <footer class="text-center py-6 px-4 bottom-nav-safe-area">
+        <p class="text-xs text-gray-500">&copy; <span id="currentYearPostPage"></span> SantWoo. Posts from Humans.</p>
+    </footer>
+
+    <script src="js/post_script.js"></script>
+</body>
+</html>
