@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // IMPORTANT: For local development, this MUST be your local backend URL.
     // For live deployment, this MUST be your live backend URL (e.g., 'https://yourdomain.com/api').
-    const API_BASE_URL = 'https://santwoo.com/api'; // <<< CHECK AND UPDATE IF YOUR LOCAL PORT IS DIFFERENT
+    const API_BASE_URL = 'http://localhost:3000/api'; // <<< CHECK AND UPDATE IF YOUR LOCAL PORT IS DIFFERENT
 
     // Category definitions with Tailwind classes for styling
     const categories = [

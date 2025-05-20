@@ -1,8 +1,10 @@
+/* File: frontend/css/style.css */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #F9FAFB;
-    padding-bottom: 70px;
+    background-color: #F9FAFB; /* Light gray background for the body */
+    padding-bottom: 70px; /* Space for the fixed footer */
 }
+
 /* --- Default Main Accent Gradient (Pink/Red) --- */
 .gradient-accent-main-default {
     background-image: linear-gradient(to right, #EC4899, #EF4444);
@@ -28,32 +30,120 @@ body {
 .gradient-text-cat-spiritual { background-image: linear-gradient(to right, #A855F7, #D946EF); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .gradient-text-cat-love { background-image: linear-gradient(to right, #F97316, #EC4899); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
+/* Dialog styles */
+dialog[open] { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+dialog::backdrop { 
+    background-color: rgba(0, 0, 0, 0.6); 
+    /* backdrop-filter: blur(3px); /* Optional: Adds a blur effect to the background */
+}
 
-dialog[open] { display: flex; align-items: center; justify-content: center; }
-dialog::backdrop { background-color: rgba(0, 0, 0, 0.6); }
-.fab { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 45; }
+/* Floating Action Button (FAB) */
+.fab { 
+    position: fixed; 
+    bottom: 1.5rem; /* Adjust if overlapping with footer */
+    right: 1.5rem; 
+    z-index: 45; /* Ensure it's above post feed but below dialog backdrop if necessary */
+}
 
-.category-bar { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; padding: 10px 0; }
-.category-bar::-webkit-scrollbar { display: none; }
+/* Category Bar Styles */
+.category-bar { 
+    display: flex; 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE and Edge */
+    padding: 10px 0; 
+}
+.category-bar::-webkit-scrollbar { 
+    display: none; /* Chrome, Safari, Opera */
+}
 .category-item {
-    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 72px; height: 72px; margin-right: 10px; border-radius: 10px;
-    background-color: #FFFFFF; border: 1px solid #E5E7EB; cursor: pointer;
+    flex-shrink: 0; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    width: 72px; 
+    height: 72px; 
+    margin-right: 10px; 
+    border-radius: 10px;
+    background-color: #FFFFFF; 
+    border: 1px solid #E5E7EB; /* gray-200 */
+    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-image 0.3s ease;
     text-align: center;
+    user-select: none; /* Prevent text selection on click */
 }
-.category-item:last-child { margin-right: 0; }
-.category-item:hover:not(.active) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: #D1D5DB; }
+.category-item:last-child { 
+    margin-right: 0; 
+}
+.category-item:hover:not(.active) { 
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+    border-color: #D1D5DB; /* gray-300 */
+}
 .category-item.active {
-    color: white; border: 1px solid transparent;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1); transform: translateY(-1px);
+    color: white; 
+    border: 1px solid transparent; /* Or a border matching the gradient */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1); 
+    transform: translateY(-1px);
 }
-.category-icon { width: 26px; height: 26px; margin-bottom: 5px; color: #4B5563; transition: color 0.3s ease; }
-.category-item.active .category-icon { color: white; }
-.category-name { font-size: 0.65rem; color: #6B7280; font-weight: 500; line-height: 1.2; transition: color 0.3s ease; }
-.category-item.active .category-name { color: white; font-weight: 600; }
+.category-icon { 
+    width: 26px; 
+    height: 26px; 
+    margin-bottom: 5px; 
+    color: #4B5563; /* gray-600 */
+    transition: color 0.3s ease; 
+}
+.category-item.active .category-icon { 
+    color: white; 
+}
+.category-name { 
+    font-size: 0.65rem; 
+    color: #6B7280; /* gray-500 */
+    font-weight: 500; 
+    line-height: 1.2; 
+    transition: color 0.3s ease; 
+}
+.category-item.active .category-name { 
+    color: white; 
+    font-weight: 600; 
+}
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+/* Custom Scrollbar Styles (Optional, for browsers that support it) */
+::-webkit-scrollbar { 
+    width: 5px; 
+    height: 5px; 
+}
+::-webkit-scrollbar-track { 
+    background: #f1f1f1; 
+    border-radius: 10px; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #c1c1c1; 
+    border-radius: 10px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #a1a1a1; 
+}
+
+/* Animation for posts fading in */
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(10px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+.animate-fadeIn { 
+  animation: fadeIn 0.4s ease-out forwards; 
+}
+
+/* Utility for line clamping text */
+.line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}

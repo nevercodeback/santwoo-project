@@ -1,140 +1,178 @@
 // File: santwoo_project/backend/server.js
-// Import necessary packages
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config(); // Load environment variables
+const db = require('./db'); // Your database connection pool
 
-// Initialize the Express application
+// Import middleware
+const { protect } = require('./middleware/authMiddleware');
+
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-const db = require('./db'); // Import our database connection pool
-
-// Middleware
+// --- Middleware ---
 app.use(cors()); // Enable CORS for all routes
-app.use(express.json()); // Allow the server to understand JSON data in request bodies
+app.use(express.json()); // Parse JSON request bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
 
-// Define the port the server will run on
-const PORT = process.env.PORT || 3001; // Use port from .env or default to 3001
+// --- API Routes ---
 
-// Simple test route
-app.get('/', (req, res) => {
-    res.send('SantWoo Backend is running!');
-});
+// Authentication routes
+app.use('/api/auth', authRoutes);
 
-// API ROUTE: Get all posts
+// --- Posts Routes (Modified) ---
+
+// GET all posts (Publicly accessible)
 app.get('/api/posts', async (req, res) => {
     try {
-        // Ensure title is selected
-        const [posts] = await db.query('SELECT id, user_name, title, story, category_id, support_count, created_at FROM posts ORDER BY created_at DESC');
-        res.json(posts);
+        const query = `
+            SELECT 
+                p.id, 
+                p.title, 
+                p.story, 
+                p.category_id, 
+                p.support_count, 
+                p.created_at, 
+                /* p.updated_at, -- REMOVED as it's not in your schema */
+                u.santwoo_name AS author_santwoo_name, 
+                u.first_name AS author_first_name,
+                p.user_name AS legacy_user_name
+            FROM posts p
+            LEFT JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+        `;
+        const [posts] = await db.query(query);
+
+        const processedPosts = posts.map(post => ({
+            ...post,
+            user_name: post.author_santwoo_name || post.legacy_user_name || 'Anonymous',
+        }));
+
+        res.status(200).json(processedPosts);
     } catch (error) {
-        console.error('Error fetching posts:', error);
-        res.status(500).json({
-            message: 'Failed to fetch posts from database.',
-            errorDetails: error.message
-        });
+        console.error("Error fetching posts:", error);
+        res.status(500).json({ message: "Failed to fetch posts", error: error.message });
     }
 });
 
-// API ROUTE: Get a single post by ID
-app.get('/api/posts/:postId', async (req, res) => {
-    const { postId } = req.params;
-
-    if (isNaN(parseInt(postId))) {
-        return res.status(400).json({ message: 'Invalid Post ID format.' });
-    }
-
+// GET a single post by ID (Publicly accessible)
+app.get('/api/posts/:id', async (req, res) => {
+    const postId = req.params.id;
     try {
-        const [posts] = await db.query('SELECT id, user_name, title, story, category_id, support_count, created_at FROM posts WHERE id = ?', [postId]);
+        const query = `
+            SELECT 
+                p.id, 
+                p.title, 
+                p.story, 
+                p.category_id, 
+                p.support_count, 
+                p.created_at, 
+                /* p.updated_at, -- REMOVED as it's not in your schema */
+                u.santwoo_name AS author_santwoo_name,
+                u.first_name AS author_first_name,
+                p.user_name AS legacy_user_name
+            FROM posts p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.id = ?
+        `;
+        const [posts] = await db.query(query, [postId]);
+
         if (posts.length === 0) {
-            return res.status(404).json({ message: 'Post not found.' });
+            return res.status(404).json({ message: "Post not found" });
         }
-        res.json(posts[0]); // Send the single post object
+        const post = posts[0];
+        const processedPost = {
+            ...post,
+            user_name: post.author_santwoo_name || post.legacy_user_name || 'Anonymous',
+        };
+        res.status(200).json(processedPost);
     } catch (error) {
-        console.error(`Error fetching post with ID ${postId}:`, error);
-        res.status(500).json({
-            message: 'Failed to fetch post.',
-            errorDetails: error.message
-        });
+        console.error(`Error fetching post ${postId}:`, error);
+        res.status(500).json({ message: "Failed to fetch post", error: error.message });
     }
 });
 
+// POST a new story (Protected Route)
+app.post('/api/posts', protect, async (req, res) => {
+    const userId = req.user.userId;
+    const { title, story, category_id } = req.body;
 
-// API ROUTE: Create a new post
-app.post('/api/posts', async (req, res) => {
-    // Get the data from the request body.
-    const { user_name, title, story, category_id } = req.body; // Added title
-
-    // Basic validation: Check if title, story and category_id are provided
-    if (!title || !story || !category_id) { // Ensure title is also required
-        return res.status(400).json({ message: 'Title, story, and category are required.' });
+    if (!title || !story || !category_id) {
+        return res.status(400).json({ message: "Title, story, and category are required." });
+    }
+    if (!userId) {
+        return res.status(401).json({ message: "User not authenticated." });
     }
 
     try {
-        const sql = 'INSERT INTO posts (user_name, title, story, category_id) VALUES (?, ?, ?, ?)';
+        const [result] = await db.query(
+            'INSERT INTO posts (user_id, title, story, category_id, support_count) VALUES (?, ?, ?, ?, ?)',
+            [userId, title, story, category_id, 0]
+        );
+        const newPostId = result.insertId;
 
-        const finalUserName = (user_name && user_name.trim() !== '') ? user_name : 'Anonymous';
-
-        const [result] = await db.query(sql, [finalUserName, title, story, category_id]);
-
-        // Fetch the newly created post to return its full data including created_at and support_count (defaults)
-        const [newPostArray] = await db.query('SELECT id, user_name, title, story, category_id, support_count, created_at FROM posts WHERE id = ?', [result.insertId]);
-
-        if (newPostArray.length === 0) {
-             return res.status(500).json({ message: 'Failed to retrieve the created post.'});
+        const query = `
+            SELECT 
+                p.id, p.title, p.story, p.category_id, p.support_count, p.created_at,
+                /* p.updated_at, -- REMOVED as it's not in your schema */
+                u.santwoo_name AS author_santwoo_name,
+                u.first_name AS author_first_name
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.id = ?
+        `;
+        const [newPostArray] = await db.query(query, [newPostId]);
+        
+        if (newPostArray.length > 0) {
+            const newPost = newPostArray[0];
+            const processedPost = {
+                ...newPost,
+                user_name: newPost.author_santwoo_name || 'Anonymous',
+            };
+            res.status(201).json(processedPost);
+        } else {
+            res.status(500).json({ message: "Failed to retrieve the created post." });
         }
 
-        res.status(201).json(newPostArray[0]); // Return the full new post object
-
     } catch (error) {
-        console.error('Error creating post:', error);
-        res.status(500).json({
-            message: 'Failed to create post in database.',
-            errorDetails: error.message
-        });
+        console.error("Error creating post:", error);
+        res.status(500).json({ message: "Failed to create post", error: error.message });
     }
 });
 
 
-// API ROUTE: Support a post (increment support_count)
-app.put('/api/posts/:postId/support', async (req, res) => {
-    const { postId } = req.params;
-
-    if (isNaN(parseInt(postId))) {
-        return res.status(400).json({ message: 'Invalid Post ID format.' });
-    }
-
+// PUT update support count for a post
+app.put('/api/posts/:id/support', async (req, res) => {
+    const postId = req.params.id;
     try {
         const [posts] = await db.query('SELECT support_count FROM posts WHERE id = ?', [postId]);
         if (posts.length === 0) {
-            return res.status(404).json({ message: 'Post not found.' });
+            return res.status(404).json({ message: "Post not found" });
         }
 
-        const sql = 'UPDATE posts SET support_count = support_count + 1 WHERE id = ?';
-        const [result] = await db.query(sql, [postId]);
+        const [result] = await db.query(
+            'UPDATE posts SET support_count = support_count + 1 WHERE id = ?',
+            [postId]
+        );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Post not found or no change made.' });
+            return res.status(404).json({ message: "Post not found or no rows updated." });
         }
-
-        const [updatedPost] = await db.query('SELECT support_count FROM posts WHERE id = ?', [postId]);
-
-        res.json({
-            message: 'Post supported successfully!',
-            postId: parseInt(postId),
-            new_support_count: updatedPost[0].support_count
-        });
+        
+        const [updatedPosts] = await db.query('SELECT support_count FROM posts WHERE id = ?', [postId]);
+        res.status(200).json({ message: "Support count updated", new_support_count: updatedPosts[0].support_count });
 
     } catch (error) {
-        console.error('Error supporting post:', error);
-        res.status(500).json({
-            message: 'Failed to support post.',
-            errorDetails: error.message
-        });
+        console.error(`Error updating support for post ${postId}:`, error);
+        res.status(500).json({ message: "Failed to update support count", error: error.message });
     }
 });
 
-// Start the server
+
+// --- Start Server ---
 app.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
+    console.log(`Backend server running on http://localhost:${PORT}`);
 });

@@ -1,5 +1,6 @@
 // File: santwoo_project/frontend/js/script.js
 
+// DOM Element References
 const siteTitleElement = document.getElementById('siteTitleDynamic');
 const fabElement = document.getElementById('openCreatePostDialogFab');
 const submitPostButton = document.getElementById('submitPostButton');
@@ -7,14 +8,30 @@ const categoryBar = document.getElementById('categoryBar');
 const postCategorySelect = document.getElementById('postCategory');
 const postFeed = document.getElementById('postFeed');
 const createPostForm = document.getElementById('createPostForm');
+const feedStatusMessage = document.getElementById('feedStatusMessage'); // For loading/no posts messages
+const loginAuthButton = document.getElementById('loginAuthButton'); // The user icon button
+const authButtonText = document.getElementById('authButtonText'); // sr-only text for the icon button
 
+// Gradient Class Definitions
 const defaultMainGradientBgClass = 'gradient-accent-main-default';
 const defaultMainGradientTextClass = 'gradient-text-main-default';
 
-// IMPORTANT: For local development, this should be your local backend URL.
-// For live deployment, this MUST be your live backend URL (e.g., 'https://santwoo.com/api').
-const API_BASE_URL = 'https://santwoo.com/api';
+// API Base URL is now expected to be defined in auth.js, which is loaded before this script.
+// Ensure API_BASE_URL is correctly defined in auth.js (e.g., const API_BASE_URL = 'http://localhost:3000/api';)
+if (typeof API_BASE_URL === 'undefined') {
+    console.error("CRITICAL ERROR: API_BASE_URL is not defined. Ensure it's declared in auth.js and auth.js is loaded before script.js.");
+    // Optionally, display an error to the user on the page
+    if(feedStatusMessage) {
+        feedStatusMessage.textContent = "Critical configuration error: API_BASE_URL is missing.";
+        feedStatusMessage.classList.add('text-red-500');
+        feedStatusMessage.classList.remove('hidden');
+    }
+} else {
+    console.log('API_BASE_URL (from auth.js) is set to:', API_BASE_URL);
+}
 
+
+// Category Definitions
 const categories = [
     { name: 'All', icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="category-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>', id: 'all', gradientBgClass: 'gradient-bg-cat-all', gradientTextClass: 'gradient-text-cat-all' },
     { name: 'Tech', icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="category-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-7.5h12.5" /></svg>', id: 'tech', gradientBgClass: 'gradient-bg-cat-tech', gradientTextClass: 'gradient-text-cat-tech' },
@@ -26,31 +43,34 @@ const categories = [
 const allGradientBgClasses = [defaultMainGradientBgClass, ...categories.map(c => c.gradientBgClass)];
 const allGradientTextClasses = [defaultMainGradientTextClass, ...categories.map(c => c.gradientTextClass)];
 
-// --- Function to get category display name by ID ---
+// --- Helper Functions ---
 function getCategoryDisplayName(categoryId) {
     const category = categories.find(c => c.id === categoryId);
     return category ? category.name : categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
 }
 
-// --- Function to render a single post on the main feed ---
+function sanitizeHTML(str) {
+    if (!str) return "";
+    const temp = document.createElement('div');
+    temp.textContent = str;
+    return temp.innerHTML;
+}
+
+// --- Post Rendering ---
 function renderPost(post) {
     const postElement = document.createElement('article');
-    // Make the article itself clickable to navigate to post.html
     postElement.className = 'bg-white p-5 sm:p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 animate-fadeIn cursor-pointer';
     postElement.dataset.category = post.category_id;
     postElement.dataset.postId = post.id;
 
-    // Add click event listener to navigate to post.html
     postElement.addEventListener('click', (event) => {
-        // Ensure clicks on buttons within the post don't trigger navigation
         if (event.target.closest('button.support-button') || event.target.closest('button.share-button')) {
-            return;
+            return; // Don't navigate if support/share button was clicked
         }
-        window.location.href = `post.html?id=${post.id}`; // Navigate to post page
+        window.location.href = `post.html?id=${post.id}`;
     });
 
     const categoryNameForDisplay = getCategoryDisplayName(post.category_id);
-
     const categoryPostTagColors = {
         all: 'text-gray-500', tech: 'text-blue-500', life: 'text-green-500',
         spiritual: 'text-purple-500', love: 'text-pink-500'
@@ -58,14 +78,13 @@ function renderPost(post) {
     const categoryColorClass = categoryPostTagColors[post.category_id] || 'text-gray-500';
 
     const date = new Date(post.created_at);
-    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) + ', ' +
-                          date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
+    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    const formattedTime = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
 
-    // Sanitize title, user_name, and story before inserting into HTML
-    const safeTitle = post.title ? post.title.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "No Title";
-    const safeUserName = (post.user_name || 'Anonymous').replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    // For the feed, we'll keep the story snippet concise and handle full story on post.html
-    const storySnippet = post.story ? post.story.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, ' ') : "";
+    const safeTitle = sanitizeHTML(post.title || "No Title");
+    const safeUserName = sanitizeHTML(post.user_name || 'Anonymous');
+    // Truncate story for snippet, remove newlines for single line display in card
+    const storySnippet = sanitizeHTML(post.story || "").replace(/\n/g, ' ').substring(0, 150) + (post.story && post.story.length > 150 ? "..." : "");
 
 
     postElement.innerHTML = `
@@ -74,7 +93,7 @@ function renderPost(post) {
                 <span class="font-semibold text-md sm:text-lg text-gray-800">${safeUserName}</span>
                 <span class="block text-xs ${categoryColorClass} font-medium mt-0.5">#${categoryNameForDisplay}</span>
             </div>
-            <span class="text-xs text-gray-500 ml-auto whitespace-nowrap pl-2">${formattedDate}</span>
+            <span class="text-xs text-gray-500 ml-auto whitespace-nowrap pl-2 text-right">${formattedDate}<br>${formattedTime}</span>
         </div>
         <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">${safeTitle}</h2>
         <p class="text-gray-700 leading-relaxed mb-4 text-sm sm:text-base line-clamp-3">${storySnippet}</p>
@@ -91,105 +110,178 @@ function renderPost(post) {
     return postElement;
 }
 
-// --- Function to fetch and display all posts ---
 async function fetchAndDisplayPosts() {
-    if (!postFeed) return;
+    if (!postFeed || !feedStatusMessage) return;
+
+    feedStatusMessage.textContent = 'Loading stories...';
+    feedStatusMessage.classList.remove('hidden', 'text-red-500'); // Reset styles
+    postFeed.innerHTML = ''; // Clear previous posts
+
+    if (typeof API_BASE_URL === 'undefined' || !API_BASE_URL) {
+        // This condition is now checked earlier, but good to keep as a safeguard
+        console.error("API_BASE_URL is not defined when trying to fetch posts!");
+        feedStatusMessage.textContent = "Configuration error: Cannot connect to server.";
+        feedStatusMessage.classList.add('text-red-500');
+        feedStatusMessage.classList.remove('hidden');
+        return;
+    }
 
     try {
+        console.log(`Fetching posts from: ${API_BASE_URL}/posts`); // Log the URL being fetched
         const response = await fetch(`${API_BASE_URL}/posts`);
+        console.log('Fetch response status:', response.status); // Log response status
+
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            let errorMsg = `HTTP error! status: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                console.error('Error data from server:', errorData); // Log error data
+                errorMsg = errorData.message || errorData.error || errorMsg;
+            } catch (e) { 
+                console.error('Could not parse error JSON:', e);
+                const textResponse = await response.text(); // Try to get text response
+                console.error('Error response text:', textResponse);
+                errorMsg = textResponse || errorMsg;
+            }
+            throw new Error(errorMsg);
         }
         const posts = await response.json();
+        console.log('Fetched posts:', posts); // Log fetched posts
 
-        postFeed.innerHTML = ''; // Clear previous posts
         if (Array.isArray(posts) && posts.length > 0) {
+            feedStatusMessage.classList.add('hidden'); // Hide loading message
             posts.forEach(post => {
                 const postElement = renderPost(post);
                 postFeed.appendChild(postElement);
             });
         } else {
-            postFeed.innerHTML = '<p class="text-center text-gray-500 py-10">No stories shared yet. Be the first!</p>';
+            feedStatusMessage.textContent = 'No stories shared yet. Be the first!';
+            feedStatusMessage.classList.remove('hidden'); // Ensure it's visible
         }
-        addInteractiveButtonListeners(); // Re-attach listeners for new buttons
+        // addInteractiveButtonListeners(); // This is now handled by event delegation setup in initializeApp
+        filterPostsByCategory(); // Apply current category filter
     } catch (error) {
         console.error("Could not fetch posts:", error);
-        postFeed.innerHTML = `<p class="text-center text-red-500 py-10">Could not load posts. Is the backend server running? <br><small>${error.message}</small></p>`;
+        feedStatusMessage.textContent = `Could not load posts. ${error.message}`;
+        feedStatusMessage.classList.add('text-red-500');
+        feedStatusMessage.classList.remove('hidden'); // Ensure error is visible
     }
 }
 
 // --- Category Bar and Theme Logic ---
-categories.forEach((cat, index) => {
-    const catItem = document.createElement('div');
-    catItem.className = 'category-item';
-    if (index === 0) { // 'All' category active by default
-        catItem.classList.add('active', cat.gradientBgClass);
-    }
-    catItem.dataset.categoryId = cat.id;
-    catItem.dataset.gradientBgClass = cat.gradientBgClass;
-    catItem.dataset.gradientTextClass = cat.gradientTextClass;
-    catItem.innerHTML = `${cat.icon}<span class="category-name">${cat.name}</span>`;
+function setupCategoryBar() {
+    if (!categoryBar) return;
+    categoryBar.innerHTML = ''; // Clear existing items
 
-    catItem.addEventListener('click', function() {
-        document.querySelectorAll('.category-item').forEach(item => {
-            item.classList.remove('active');
-            allGradientBgClasses.forEach(gradClass => item.classList.remove(gradClass));
-        });
-        this.classList.add('active', this.dataset.gradientBgClass);
+    categories.forEach((cat, index) => {
+        const catItem = document.createElement('div');
+        catItem.className = 'category-item';
+        if (index === 0) { // Default to 'All' category active
+            catItem.classList.add('active', cat.gradientBgClass);
+        }
+        catItem.dataset.categoryId = cat.id;
+        catItem.dataset.gradientBgClass = cat.gradientBgClass;
+        catItem.dataset.gradientTextClass = cat.gradientTextClass;
+        catItem.innerHTML = `${cat.icon}<span class="category-name">${cat.name}</span>`;
 
-        const newBgGradient = this.dataset.gradientBgClass;
-        const newTextGradient = this.dataset.gradientTextClass;
-        allGradientBgClasses.forEach(cls => {
-            if (fabElement) fabElement.classList.remove(cls);
-            if (submitPostButton) submitPostButton.classList.remove(cls);
-        });
-        allGradientTextClasses.forEach(cls => {
-            if (siteTitleElement) siteTitleElement.classList.remove(cls);
-        });
-
-        if (siteTitleElement) siteTitleElement.classList.add(newTextGradient);
-        if (fabElement) fabElement.classList.add(newBgGradient);
-        if (submitPostButton) submitPostButton.classList.add(newBgGradient);
-
-
-        const selectedCatId = this.dataset.categoryId;
-        if (postFeed) {
-            let hasVisiblePosts = false;
-            document.querySelectorAll('#postFeed article').forEach(postArticle => {
-                if (selectedCatId === 'all' || postArticle.dataset.category === selectedCatId) {
-                    postArticle.style.display = 'block';
-                    hasVisiblePosts = true;
-                } else {
-                    postArticle.style.display = 'none';
-                }
+        catItem.addEventListener('click', function() {
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+                allGradientBgClasses.forEach(gradClass => item.classList.remove(gradClass));
             });
-            if (!hasVisiblePosts && selectedCatId !== 'all') {
-                 postFeed.innerHTML = `<p class="text-center text-gray-500 py-10">No stories found in the "${getCategoryDisplayName(selectedCatId)}" category yet.</p>`;
-            } else if (!hasVisiblePosts && selectedCatId === 'all' && document.querySelectorAll('#postFeed article').length === 0) {
-                 postFeed.innerHTML = '<p class="text-center text-gray-500 py-10">No stories shared yet. Be the first!</p>';
-            }
+            this.classList.add('active', this.dataset.gradientBgClass);
+
+            applyThemeGradients(this.dataset.gradientBgClass, this.dataset.gradientTextClass);
+            filterPostsByCategory();
+        });
+        categoryBar.appendChild(catItem);
+
+        // Populate category select in dialog
+        if (cat.id !== 'all' && postCategorySelect) {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.name;
+            postCategorySelect.appendChild(option);
         }
     });
-    if (categoryBar) categoryBar.appendChild(catItem);
 
-    if (cat.id !== 'all' && postCategorySelect) {
-        const option = document.createElement('option');
-        option.value = cat.id;
-        option.textContent = cat.name;
-        postCategorySelect.appendChild(option);
+    if (postCategorySelect && postCategorySelect.options.length > 0 && categories.length > 1) {
+        postCategorySelect.value = categories[1].id; // Default to the first actual category
     }
-});
-if (postCategorySelect && postCategorySelect.options.length > 0 && categories.length > 1) {
-    postCategorySelect.value = categories[1].id;
+    // Apply initial theme based on default active category
+    const initialActiveCat = categoryBar.querySelector('.category-item.active');
+    if (initialActiveCat) {
+        applyThemeGradients(initialActiveCat.dataset.gradientBgClass, initialActiveCat.dataset.gradientTextClass);
+    }
+}
+
+function applyThemeGradients(bgGradient, textGradient) {
+    allGradientBgClasses.forEach(cls => {
+        if (fabElement) fabElement.classList.remove(cls);
+        if (submitPostButton) submitPostButton.classList.remove(cls);
+    });
+    allGradientTextClasses.forEach(cls => {
+        if (siteTitleElement) siteTitleElement.classList.remove(cls);
+    });
+
+    if (siteTitleElement) siteTitleElement.classList.add(textGradient);
+    if (fabElement) fabElement.classList.add(bgGradient);
+    if (submitPostButton) submitPostButton.classList.add(bgGradient);
+}
+
+function filterPostsByCategory() {
+    if (!postFeed || !feedStatusMessage) return;
+    const activeCategoryItem = categoryBar.querySelector('.category-item.active');
+    if (!activeCategoryItem) return;
+
+    const selectedCatId = activeCategoryItem.dataset.categoryId;
+    let hasVisiblePosts = false;
+    const allPosts = postFeed.querySelectorAll('article');
+
+    allPosts.forEach(postArticle => {
+        if (selectedCatId === 'all' || postArticle.dataset.category === selectedCatId) {
+            postArticle.style.display = 'block';
+            hasVisiblePosts = true;
+        } else {
+            postArticle.style.display = 'none';
+        }
+    });
+    
+    if (allPosts.length === 0 && typeof API_BASE_URL !== 'undefined') { // Check API_BASE_URL to avoid error on initial critical fail
+        feedStatusMessage.textContent = 'No stories shared yet. Be the first!';
+        feedStatusMessage.classList.remove('hidden', 'text-red-500');
+    } else if (!hasVisiblePosts && allPosts.length > 0) { 
+        feedStatusMessage.textContent = `No stories found in the "${getCategoryDisplayName(selectedCatId)}" category.`;
+        feedStatusMessage.classList.remove('hidden', 'text-red-500');
+    } else if (hasVisiblePosts) { 
+        feedStatusMessage.classList.add('hidden');
+    }
+    // If API_BASE_URL was undefined, the message is already set by the initial check.
 }
 
 
 // --- Dialog Functionality ---
-const openDialogButtonFab = document.getElementById('openCreatePostDialogFab');
-const closeDialogButton = document.getElementById('closeCreatePostDialog');
 const createPostDialog = document.getElementById('createPostDialog');
+const closeDialogButton = document.getElementById('closeCreatePostDialog');
+const postTitleDialogInput = document.getElementById('postTitleDialog'); 
 
 function openDialog() {
+    if (typeof API_BASE_URL === 'undefined') {
+        alert("Application is not properly configured. Cannot open dialog.");
+        return;
+    }
+    if (typeof isLoggedIn !== 'function' || typeof getUserInfo !== 'function') {
+        console.error("Authentication functions (isLoggedIn, getUserInfo) are not available. Ensure auth.js is loaded before script.js.");
+        alert("Error: Authentication system not ready. Please try again later.");
+        return;
+    }
+
+    if (!isLoggedIn()) {
+        alert("Please log in to create a post."); 
+        window.location.href = 'login.html'; 
+        return;
+    }
+
     if (createPostDialog) {
         const activeCategoryItem = categoryBar.querySelector('.category-item.active');
         const currentBgGradient = activeCategoryItem ? activeCategoryItem.dataset.gradientBgClass : defaultMainGradientBgClass;
@@ -198,46 +290,60 @@ function openDialog() {
             if (submitPostButton) submitPostButton.classList.remove(cls);
         });
         if (submitPostButton) submitPostButton.classList.add(currentBgGradient);
+        
+        const userInfo = getUserInfo();
+        if (userInfo && userInfo.santwooName) {
+            const userNameInput = document.getElementById('userName');
+            if(userNameInput) userNameInput.value = userInfo.santwooName;
+        }
 
         createPostDialog.showModal();
-        document.body.classList.add('overflow-hidden'); // Prevent background scroll
+        document.body.classList.add('overflow-hidden'); 
     }
 }
 function closeDialog() {
     if (createPostDialog) {
-        createPostDialog.close(); // This will also trigger the 'close' event listener below
+        createPostDialog.close();
     }
 }
 
-if (openDialogButtonFab) openDialogButtonFab.addEventListener('click', openDialog);
+if (fabElement) fabElement.addEventListener('click', openDialog);
 if (closeDialogButton) closeDialogButton.addEventListener('click', closeDialog);
 
 if (createPostDialog) {
-    createPostDialog.addEventListener('click', (event) => {
-        if (event.target === createPostDialog) closeDialog(); // Close if backdrop is clicked
+    createPostDialog.addEventListener('click', (event) => { 
+        if (event.target === createPostDialog) closeDialog();
     });
     createPostDialog.addEventListener('close', () => {
         if (createPostForm) createPostForm.reset();
         if (postCategorySelect && categories.length > 1) {
-            postCategorySelect.value = categories[1].id;
+            postCategorySelect.value = categories[1].id; 
         }
-        document.body.classList.remove('overflow-hidden'); // Restore background scroll
+        document.body.classList.remove('overflow-hidden');
     });
 }
-
 
 // --- Handle New Post Submission ---
 if (createPostForm) {
     createPostForm.addEventListener('submit', async function(event) {
         event.preventDefault();
-        const userName = document.getElementById('userName').value.trim();
-        const titleInput = document.getElementById('postTitle');
-        if (!titleInput) {
-            console.error("Title input field not found!");
-            alert("An error occurred: Title field is missing.");
+        if (typeof API_BASE_URL === 'undefined') {
+             alert("Application is not properly configured. Cannot submit post.");
+             return;
+        }
+        if (typeof isLoggedIn !== 'function' || typeof fetchWithAuth !== 'function') {
+            console.error("Authentication functions (isLoggedIn, fetchWithAuth) are not available.");
+            alert("Error: Authentication system not ready for posting. Please try again later.");
             return;
         }
-        const title = titleInput.value.trim();
+
+        if (!isLoggedIn()) {
+            alert("Authentication error. Please log in again.");
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const title = postTitleDialogInput.value.trim(); 
         const story = document.getElementById('userStory').value.trim();
         const categoryId = document.getElementById('postCategory').value;
 
@@ -247,7 +353,6 @@ if (createPostForm) {
         }
 
         const postData = {
-            user_name: userName || 'Anonymous',
             title: title,
             story: story,
             category_id: categoryId
@@ -258,38 +363,29 @@ if (createPostForm) {
         submitPostButton.disabled = true;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/posts`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(postData),
-            });
+            const response = await fetchWithAuth('/posts', 'POST', postData); 
 
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({message: "An unknown error occurred."}));
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
-
-            // Backend should return the full new post object, including id and created_at
             const newPostFromServer = await response.json();
 
-            // Instead of re-fetching all, prepend the new post and update UI
             if (postFeed && newPostFromServer && newPostFromServer.id) {
-                 // If "No stories" message is present, remove it
-                const noPostsMessage = postFeed.querySelector('p.text-center.text-gray-500');
-                if (noPostsMessage) noPostsMessage.remove();
-
+                feedStatusMessage.classList.add('hidden'); 
                 const postElement = renderPost(newPostFromServer);
-                postFeed.prepend(postElement); // Add to the top of the feed
-                addInteractiveButtonListeners(); // Re-attach listeners for the new post's buttons
+                postFeed.prepend(postElement); 
+                filterPostsByCategory(); 
             } else {
-                // Fallback if server doesn't return full post, refresh all
-                fetchAndDisplayPosts();
+                fetchAndDisplayPosts(); 
             }
-
-            closeDialog(); // Will reset form via its 'close' event listener
+            closeDialog();
         } catch (error) {
             console.error('Failed to create post:', error);
             alert(`Failed to create post: ${error.message}`);
+            if (error.message.includes("Session expired") || error.message.includes("401")) { 
+                 window.location.href = 'login.html?sessionExpired=true';
+            }
         } finally {
             submitPostButton.textContent = originalButtonText;
             submitPostButton.disabled = false;
@@ -297,92 +393,179 @@ if (createPostForm) {
     });
 }
 
-// --- Handle Support and Share Button Clicks (Event Delegation for dynamic content) ---
-function addInteractiveButtonListeners() {
-    // Support Buttons
-    document.querySelectorAll('.support-button').forEach(button => {
-        // Clone and replace to ensure old listeners are removed if this function is called multiple times
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
+// --- Handle Support and Share Button Clicks (Event Delegation) ---
+function setupInteractiveButtonListener() {
+    if (!postFeed) return;
 
-        newButton.addEventListener('click', async function(event) {
-            event.stopPropagation(); // Prevent card click navigation
-            const postId = this.dataset.postIdSupport;
-            if (!postId) return;
+    postFeed.addEventListener('click', async function(event) { 
+        if (typeof API_BASE_URL === 'undefined') {
+             console.warn("Interaction attempt while application is not properly configured (API_BASE_URL missing).");
+             return;
+        }
+        const target = event.target;
+        const supportButton = target.closest('.support-button');
+        const shareButton = target.closest('.share-button');
 
-            if (this.classList.contains('supported-by-user') || this.disabled) return;
-            this.disabled = true;
+        if (supportButton) {
+            event.stopPropagation(); 
+            const postId = supportButton.dataset.postIdSupport;
+            if (!postId || supportButton.classList.contains('supported-by-user') || supportButton.disabled) return;
+            
+            if (typeof isLoggedIn !== 'function' || typeof fetchWithAuth !== 'function') {
+                console.error("Authentication functions for support not available.");
+                alert("Error: Authentication system not ready. Please try again later.");
+                return;
+            }
+
+            if (!isLoggedIn()) {
+                alert("Please log in to support posts.");
+                window.location.href = 'login.html';
+                return;
+            }
+            supportButton.disabled = true;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/posts/${postId}/support`, { method: 'PUT' });
+                const response = await fetchWithAuth(`/posts/${postId}/support`, 'PUT'); 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = await response.json().catch(() => ({message: "Failed to process support."}));
                     throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-
-                const countElement = this.querySelector('.support-count');
+                const countElement = supportButton.querySelector('.support-count');
                 if (countElement) countElement.textContent = `(${data.new_support_count})`;
+                supportButton.classList.add('supported-by-user', 'text-[#EF4444]');
+                const heartIcon = supportButton.querySelector('svg');
+                if (heartIcon) heartIcon.style.fill = '#EF4444'; 
+                sessionStorage.setItem(`supported_${postId}`, 'true');
 
-                this.classList.add('supported-by-user', 'text-[#EF4444]');
-                const heartIcon = this.querySelector('svg');
-                if (heartIcon) heartIcon.style.fill = '#EF4444';
-                // Keep button disabled after successful support for this session
             } catch (error) {
                 console.error('Failed to support post:', error);
-                this.disabled = false; // Re-enable on error
+                supportButton.disabled = false; 
+                 if (error.message.includes("Session expired") || error.message.includes("401")) {
+                     window.location.href = 'login.html?sessionExpired=true';
+                }
             }
-        });
-    });
+        }
 
-    // Share Buttons
-    document.querySelectorAll('.share-button').forEach(button => {
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-
-        newButton.addEventListener('click', function(event) {
-            event.stopPropagation(); // Prevent card click navigation
-            const postId = this.dataset.postIdShare;
-            const postTitle = this.dataset.postTitleShare || "Check out this story on SantWoo";
-            const shareUrl = `${window.location.origin}/post.html?id=${postId}`;
+        if (shareButton) {
+            event.stopPropagation(); 
+            const postId = shareButton.dataset.postIdShare;
+            const postTitle = shareButton.dataset.postTitleShare || "Check out this story on SantWoo";
+            const baseUrl = window.location.origin === 'null' || window.location.origin === 'file://' 
+                            ? 'http://127.0.0.1:5500/frontend' 
+                            : window.location.origin;
+            const shareUrl = `${baseUrl}/post.html?id=${postId}`;
 
             if (navigator.share) {
                 navigator.share({ title: postTitle, text: `Check out: ${postTitle}`, url: shareUrl })
                   .then(() => console.log('Successful share'))
                   .catch((error) => console.log('Error sharing:', error));
             } else {
-                prompt("Copy this link to share:", shareUrl); // Fallback
+                prompt("Copy this link to share:", shareUrl);
             }
-        });
+        }
     });
 }
 
 
-// --- Initial Page Load ---
+// --- Authentication UI Update ---
+function updateAuthUI() {
+    if (!loginAuthButton || !authButtonText) return;
+    if (typeof API_BASE_URL === 'undefined' && fabElement) { // If config failed, ensure FAB is hidden
+        fabElement.classList.add('hidden');
+        // Potentially disable login button too or show a generic error
+        loginAuthButton.href = "#";
+        loginAuthButton.setAttribute('aria-label', "System Error");
+        if(authButtonText) authButtonText.textContent = "Error";
+        return;
+    }
+
+    if (typeof isLoggedIn !== 'function' || typeof getUserInfo !== 'function' || typeof logout !== 'function') {
+        console.warn("Auth functions not fully available for UI update. Ensure auth.js is loaded and initialized correctly.");
+        loginAuthButton.href = "login.html";
+        loginAuthButton.setAttribute('aria-label', "Login or Sign up");
+        if(authButtonText) authButtonText.textContent = "Login or Sign up"; 
+        loginAuthButton.onclick = null;
+        if(fabElement) fabElement.classList.add('hidden');
+        return;
+    }
+    
+    if (isLoggedIn()) {
+        const userInfo = getUserInfo();
+        loginAuthButton.href = "#"; 
+        loginAuthButton.setAttribute('aria-label', `Logged in as ${userInfo ? userInfo.santwooName : 'User'}. Click to logout.`);
+        if(authButtonText) authButtonText.textContent = `Logout ${userInfo ? userInfo.santwooName : ''}`;
+        
+        loginAuthButton.onclick = (e) => {
+            e.preventDefault();
+            if (confirm("Are you sure you want to log out?")) {
+                logout(); 
+            }
+        };
+        if(fabElement) fabElement.classList.remove('hidden'); 
+
+    } else {
+        loginAuthButton.href = "login.html";
+        loginAuthButton.setAttribute('aria-label', "Login or Sign up");
+        if(authButtonText) authButtonText.textContent = "Login or Sign up";
+        loginAuthButton.onclick = null; 
+        if(fabElement) fabElement.classList.add('hidden'); 
+    }
+}
+
+
+// --- Initial Page Load and Event Listeners ---
 function initializeApp() {
-    fetchAndDisplayPosts();
+    if (typeof API_BASE_URL === 'undefined') {
+        // The critical error is already logged by the API_BASE_URL check at the top.
+        // UpdateAuthUI will also reflect this error state.
+        updateAuthUI(); // Ensure UI reflects the critical error state
+        return; // Stop further initialization if config is broken
+    }
+
+    if (typeof isLoggedIn !== 'function') {
+        console.error("auth.js might not be loaded or initialized correctly. isLoggedIn is not a function.");
+        if(feedStatusMessage) {
+            feedStatusMessage.textContent = "Error initializing application. Authentication module failed to load.";
+            feedStatusMessage.classList.add('text-red-500');
+            feedStatusMessage.classList.remove('hidden');
+        }
+        updateAuthUI(); // Reflect error in auth button as well
+        return;
+    }
+
+    setupCategoryBar();
+    fetchAndDisplayPosts(); 
+    updateAuthUI(); 
+    setupInteractiveButtonListener(); // Setup the main event listener for post interactions
+
     if (document.getElementById('currentYear')) {
         document.getElementById('currentYear').textContent = new Date().getFullYear();
     }
-    // Set default theme for FAB and submit button if not already set by category selection
+
     if (fabElement && !allGradientBgClasses.some(cls => fabElement.classList.contains(cls))) {
         fabElement.classList.add(defaultMainGradientBgClass);
     }
     if (submitPostButton && !allGradientBgClasses.some(cls => submitPostButton.classList.contains(cls))) {
         submitPostButton.classList.add(defaultMainGradientBgClass);
     }
-     if (siteTitleElement && !allGradientTextClasses.some(cls => siteTitleElement.classList.contains(cls))) {
+    if (siteTitleElement && !allGradientTextClasses.some(cls => siteTitleElement.classList.contains(cls))) {
         siteTitleElement.classList.add(defaultMainGradientTextClass);
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-    initializeApp();
-}
+window.addEventListener('authChange', (event) => {
+    console.log('Auth state changed:', event.detail);
+    updateAuthUI();
+    if (typeof API_BASE_URL !== 'undefined') { // Only fetch if app is configured
+        fetchAndDisplayPosts(); 
+    }
+});
 
-// Style for fadeIn animation & line-clamp
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initializeApp, 100); 
+});
+
 const styleSheet = document.createElement("style");
 styleSheet.type = "text/css";
 styleSheet.innerText = `
